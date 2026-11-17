@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tesla authorization</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #0b0b0b;
+      color: #f4f4f4;
+    }
+    main {
+      width: min(36rem, calc(100% - 2rem));
+      text-align: center;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 1rem; }
+    .error {
+      background: #3b1212;
+      color: #ffd6d6;
+      border: 1px solid #8a2b2b;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      text-align: left;
+      margin-bottom: 1.25rem;
+    }
+    .code-box {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1.05rem;
+      word-break: break-all;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin: 0 0 1.25rem;
+    }
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      background: #cc0000;
+      color: white;
+      font: inherit;
+      font-size: 1.25rem;
+      font-weight: 600;
+      padding: 0.9rem 1.75rem;
+      min-width: 12rem;
+      cursor: pointer;
+    }
+    button:hover { background: #e10600; }
+    button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    .state {
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      color: #888;
+      word-break: break-all;
+    }
+    .muted { color: #b3b3b3; }
+  </style>
+</head>
+<body>
+  <main id="app"></main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var error = params.get("error");
+      var errorDescription = params.get("error_description");
+      var code = params.get("code");
+      var state = params.get("state");
+      var app = document.getElementById("app");
+      var html = "";
+
+      if (error) {
+        html += "<h1>Authorization error</h1>";
+        html += "<div class=\"error\"><strong>" + escapeHtml(error) + "</strong>";
+        if (errorDescription) {
+          html += "<br>" + escapeHtml(errorDescription);
+        }
+        html += "</div>";
+      } else if (code) {
+        html += "<h1>Authorization code</h1>";
+        html += "<div class=\"code-box\" id=\"code\">" + escapeHtml(code) + "</div>";
+        html += "<button type=\"button\" id=\"copy\">Copy</button>";
+      } else {
+        html += "<h1>Tesla authorization</h1>";
+        html += "<p class=\"muted\">No authorization code was returned.</p>";
+      }
+
+      if (state) {
+        html += "<p class=\"state\">state: " + escapeHtml(state) + "</p>";
+      }
+
+      app.innerHTML = html;
+
+      var copyBtn = document.getElementById("copy");
+      if (copyBtn && code) {
+        copyBtn.addEventListener("click", function () {
+          var done = function () {
+            copyBtn.textContent = "Copied";
+            setTimeout(function () { copyBtn.textContent = "Copy"; }, 2000);
+          };
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code).then(done).catch(fallbackCopy);
+          } else {
+            fallbackCopy();
+          }
+          function fallbackCopy() {
+            var range = document.createRange();
+            var node = document.getElementById("code");
+            range.selectNodeContents(node);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+            try { document.execCommand("copy"); } catch (e) {}
+            sel.removeAllRanges();
+            done();
+          }
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+    })();
+  </script>
+</body>
+</html>
